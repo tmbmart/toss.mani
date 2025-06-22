@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <title>বাংলাদেশি কয়েন টস গেম</title>
+  <style>
+    body { font-family: Arial; background: #f9fcff; text-align: center; margin: 20px; }
+    h1, h2, h3 { color: #333; }
+    input, button { padding: 10px; margin: 5px; border-radius: 6px; border: 1px solid #ccc; }
+    button { background-color: #4CAF50; color: white; cursor: pointer; }
+    button:hover { background-color: #45a049; }
+    #balance { font-size: 22px; margin: 15px; font-weight: bold; }
+    .coin { width: 160px; height: 160px; margin: 20px auto; perspective: 1000px; }
+    .coin-inner {
+      width: 100%; height: 100%; position: relative;
+      transform-style: preserve-3d; transition: transform 2s;
+    }
+    .coin-front, .coin-back {
+      position: absolute; width: 100%; height: 100%; border-radius: 50%; 
+      background-size: cover; background-position: center; backface-visibility: hidden;
+    }
+    .coin-front {
+      background-image: url('https://en.numista.com/catalogue/photos/bangladesh/257-original.jpg'); /* হেডস */
+    }
+    .coin-back {
+      background-image: url('https://en.numista.com/catalogue/photos/bangladesh/256-original.jpg'); /* টেইলস */
+      transform: rotateY(180deg);
+    }
+    #result { margin-top: 15px; font-size: 18px; min-height: 24px; }
+    ul { list-style: none; padding: 0; max-width: 300px; margin: 10px auto; text-align: left; }
+    li { padding: 5px 10px; border-bottom: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+
+  <h1>🇧🇩 বাংলাদেশি কয়েন টস গেম 🇧🇩</h1>
+  <div id="balance">💰 আপনার কয়েন: <span id="coins">0</span></div>
+
+  <h3>বেট এমাউন্ট দিন:</h3>
+  <input type="number" id="betAmount" placeholder="বেট এমাউন্ট" />
+
+  <div class="coin">
+    <div class="coin-inner" id="coin-inner">
+      <div class="coin-front"></div>
+      <div class="coin-back"></div>
+    </div>
+  </div>
+
+  <p>আপনার পছন্দ বেছে নিন:</p>
+  <button onclick="placeBet('Heads')">হেডস</button>
+  <button onclick="placeBet('Tails')">টেইলস</button>
+
+  <div id="result"></div>
+
+  <h3>📜 সর্বশেষ টস:</h3>
+  <ul id="historyList"></ul>
+
+  <script>
+    let coins = parseInt(localStorage.getItem('coins')) || 100;
+    let history = JSON.parse(localStorage.getItem('history')) || [];
+
+    document.getElementById('coins').textContent = coins;
+    updateHistory();
+
+    function placeBet(userChoice) {
+      let bet = parseInt(document.getElementById('betAmount').value);
+      if (isNaN(bet) || bet <= 0 || bet > coins) {
+        document.getElementById('result').innerHTML = "❌ সঠিক বেট দিন!";
+        return;
+      }
+
+      coins -= bet;
+      localStorage.setItem('coins', coins);
+      document.getElementById('coins').textContent = coins;
+
+      const coinInner = document.getElementById('coin-inner');
+      const flips = Math.floor(Math.random() * 6) + 6;
+
+      // রিসেট করে অ্যানিমেশন চালু করো
+      coinInner.style.transition = 'none';
+      coinInner.style.transform = 'rotateY(0deg)';
+      void coinInner.offsetWidth; // রিফ্লো ট্রিক
+      coinInner.style.transition = 'transform 2s';
+      coinInner.style.transform = `rotateY(${180 * flips}deg)`;
+
+      // ফল নির্ধারণ: even = হেডস, odd = টেইলস
+      const resultIndex = flips % 2 === 0 ? 'Heads' : 'Tails';
+
+      setTimeout(() => {
+        let message = `🎯 টস: ${resultIndex}<br>`;
+        let win = false;
+        if (userChoice === resultIndex) {
+          coins += bet * 2;
+          message += `🎉 আপনি জিতেছেন! (+${bet * 2})`;
+          win = true;
+        } else {
+          message += `😞 আপনি হারলেন!`;
+        }
+
+        localStorage.setItem('coins', coins);
+        document.getElementById('coins').textContent = coins;
+        document.getElementById('result').innerHTML = message;
+
+        let entry = `${userChoice} → ${resultIndex} → ${win ? 'জয়' : 'হার'} (কয়েন: ${coins})`;
+        history.unshift(entry);
+        if (history.length > 10) history.pop();
+        localStorage.setItem('history', JSON.stringify(history));
+        updateHistory();
+      }, 2000);
+    }
+
+    function updateHistory() {
+      const list = document.getElementById('historyList');
+      list.innerHTML = '';
+      history.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        list.appendChild(li);
+      });
+    }
+  </script>
+
+</body>
+</html>
